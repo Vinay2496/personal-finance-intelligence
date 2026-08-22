@@ -1,8 +1,14 @@
 from fastapi import FastAPI
 from sqlalchemy import text
-from app.database import engine
+from app.database import engine, Base
+from app.models import user
+from app.routers import auth
+
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+
+app.include_router(auth.router)
 
 
 @app.get("/")
