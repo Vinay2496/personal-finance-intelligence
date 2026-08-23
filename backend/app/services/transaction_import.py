@@ -4,9 +4,9 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select
 
 from app.models.transaction import Transaction
+from app.services.categorization import categorize_transaction
 
 
-# Possible column names we might see across different bank exports
 DATE_COLUMNS = ["date", "transaction date", "txn date", "value date"]
 DESCRIPTION_COLUMNS = ["description", "narration", "transaction details", "remarks"]
 AMOUNT_COLUMNS = ["amount"]
@@ -57,14 +57,14 @@ def detect_columns(df: pd.DataFrame) -> dict:
         "date": date_col,
         "description": desc_col,
         "amount": amount_col,
-        "type": type_col,  # may be None; we'll infer from amount sign if missing
+        "type": type_col,
     }
 
 
 def extract_merchant(description: str) -> str:
-    # Simple first pass: take the first few words as the merchant name.
-    # This will be improved in Phase 4 (Categorization).
     return description.strip().split()[0] if description.strip() else "Unknown"
+
+
 def clean_and_import(
     df: pd.DataFrame,
     columns: dict,
@@ -78,7 +78,6 @@ def clean_and_import(
     invalid_rows = 0
     errors = []
 
-    # Pre-fetch existing transactions for this user to check duplicates in memory
     existing = db.execute(
         select(
             Transaction.transaction_date,
@@ -91,7 +90,7 @@ def clean_and_import(
     new_transactions = []
 
     for idx, row in df.iterrows():
-        row_num = idx + 2  # +2 accounts for header row + 0-index
+        row_num = idx + 2
 
         try:
             raw_date = row[columns["date"]]
@@ -119,12 +118,10 @@ def clean_and_import(
 
             description = str(raw_description).strip()
 
-            # Determine transaction type
             if columns["type"]:
                 raw_type = str(row[columns["type"]]).strip().lower()
                 transaction_type = "credit" if "cred" in raw_type else "debit"
             else:
-                # Infer from amount sign if no type column exists
                 transaction_type = "credit" if amount > 0 else "debit"
 
             amount = abs(amount)
@@ -135,6 +132,7 @@ def clean_and_import(
                 continue
 
             merchant = extract_merchant(description)
+            category = categorize_transaction(description, merchant, transaction_type)
 
             new_transactions.append(
                 Transaction(
@@ -144,10 +142,11 @@ def clean_and_import(
                     merchant=merchant,
                     amount=amount,
                     transaction_type=transaction_type,
+                    category=category,
                     source_file=source_file,
                 )
             )
-            existing_keys.add(dedup_key)  # prevent duplicates within the same file too
+            existing_keys.add(dedup_key)
 
         except Exception as e:
             invalid_rows += 1
@@ -164,5 +163,5 @@ def clean_and_import(
         "inserted": inserted,
         "duplicates_skipped": duplicates_skipped,
         "invalid_rows": invalid_rows,
-        "errors": errors[:20],  # cap error list to keep response manageable
+        "errors": errors[:20],
     }

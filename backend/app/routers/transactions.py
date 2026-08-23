@@ -4,10 +4,11 @@ import tempfile
 
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
 from sqlalchemy.orm import Session
-
+from sqlalchemy import select
+from app.models.transaction import Transaction
 from app.database import get_db
 from app.models.user import User
-from app.schemas.transaction import UploadSummary
+from app.schemas.transaction import UploadSummary, TransactionOut, TransactionCategoryUpdate
 from app.services.auth_dependency import get_current_user
 from app.services.transaction_import import (
     read_file_to_dataframe,
@@ -62,3 +63,39 @@ def upload_transactions(
         raise HTTPException(status_code=400, detail=str(e))
     finally:
         os.remove(tmp_path)
+@router.get("", response_model=list[TransactionOut])
+def list_transactions(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    transactions = db.execute(
+        select(Transaction)
+        .where(Transaction.user_id == current_user.id)
+        .order_by(Transaction.transaction_date.desc())
+    ).scalars().all()
+    return transactions
+
+@router.patch("/{transaction_id}/category", response_model=TransactionOut)
+def update_transaction_category(
+    transaction_id: int,
+    update: TransactionCategoryUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    transaction = db.execute(
+        select(Transaction).where(
+            Transaction.id == transaction_id,
+            Transaction.user_id == current_user.id,
+        )
+    ).scalar_one_or_none()
+
+    if not transaction:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+
+    transaction.category = update.category
+    transaction.subcategory = update.subcategory
+
+    db.commit()
+    db.refresh(transaction)
+
+    return transaction

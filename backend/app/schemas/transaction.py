@@ -25,3 +25,6 @@ class UploadSummary(BaseModel):
     duplicates_skipped: int
     invalid_rows: int
     errors: list[str] = []
+class TransactionCategoryUpdate(BaseModel):
+    category: str
+    subcategory: Optional[str] = None
