@@ -13,6 +13,8 @@ import type {
   MonthlyTrendItem,
   TopMerchantItem,
 } from "../api/analytics";
+import { getForecast } from "../api/forecast";
+import type { ForecastResult } from "../api/forecast";
 import {
   BarChart,
   Bar,
@@ -46,22 +48,25 @@ export default function Dashboard() {
   const [categories, setCategories] = useState<CategoryBreakdownItem[]>([]);
   const [trend, setTrend] = useState<MonthlyTrendItem[]>([]);
   const [merchants, setMerchants] = useState<TopMerchantItem[]>([]);
+  const [forecast, setForecast] = useState<ForecastResult | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadData() {
       try {
-        const [summaryData, categoryData, trendData, merchantData] =
+        const [summaryData, categoryData, trendData, merchantData, forecastData] =
           await Promise.all([
             getSummary(),
             getCategoryBreakdown(),
             getMonthlyTrend(),
             getTopMerchants(),
+            getForecast(),
           ]);
         setSummary(summaryData);
         setCategories(categoryData);
         setTrend(trendData);
         setMerchants(merchantData);
+        setForecast(forecastData);
       } finally {
         setLoading(false);
       }
@@ -83,7 +88,7 @@ export default function Dashboard() {
         <h1 className="text-2xl font-bold text-gray-800">
           Welcome, {user?.name}
         </h1>
-                <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4">
           <Link to="/insights" className="text-sm text-blue-600 hover:underline">
             View Insights
           </Link>
@@ -102,6 +107,31 @@ export default function Dashboard() {
         <KpiCard label="Expenses" value={`₹${summary?.total_expenses.toLocaleString()}`} />
         <KpiCard label="Savings" value={`₹${summary?.net_savings.toLocaleString()}`} />
         <KpiCard label="Savings Rate" value={`${summary?.savings_rate}%`} />
+      </div>
+
+      {/* Forecast Card */}
+      <div className="bg-white rounded-lg shadow p-4 mb-8">
+        <h2 className="text-lg font-semibold text-gray-800 mb-2">
+          Next Month Forecast
+        </h2>
+        {forecast?.reliable ? (
+          <div>
+            <p className="text-2xl font-bold text-gray-800">
+              ₹{forecast.predicted_expenses?.toLocaleString()}
+            </p>
+            <p className="text-sm text-gray-500 mt-1">
+              Predicted expenses for {forecast.forecast_month} · method: {forecast.method_used}
+            </p>
+            <p className="text-xs text-gray-400 mt-1">
+              Based on {forecast.historical_months_used} months of data
+              {forecast.mae !== null ? ` · avg error ±₹${forecast.mae?.toLocaleString()}` : ""}
+            </p>
+          </div>
+        ) : (
+          <p className="text-sm text-gray-500">
+            {forecast?.reliability_note ?? "Not enough data yet to generate a reliable forecast."}
+          </p>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
