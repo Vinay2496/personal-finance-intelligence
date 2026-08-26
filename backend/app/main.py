@@ -3,8 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from app.database import engine, Base
 from app.models import user, transaction
-from app.routers import auth, transactions, analytics, insights
-
+from app.routers import auth, transactions, analytics, insights, forecast
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
@@ -20,6 +19,7 @@ app.include_router(auth.router)
 app.include_router(transactions.router)
 app.include_router(analytics.router)
 app.include_router(insights.router)
+app.include_router(forecast.router)
 
 @app.get("/")
 def read_root():
