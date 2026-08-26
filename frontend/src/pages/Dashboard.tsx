@@ -1,7 +1,80 @@
+import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import {
+  getSummary,
+  getCategoryBreakdown,
+  getMonthlyTrend,
+  getTopMerchants,
+} from "../api/analytics";
+import type {
+  SummaryKPIs,
+  CategoryBreakdownItem,
+  MonthlyTrendItem,
+  TopMerchantItem,
+} from "../api/analytics";
+import {
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  CartesianGrid,
+} from "recharts";
+
+const COLORS = [
+  "#3b82f6",
+  "#f97316",
+  "#10b981",
+  "#8b5cf6",
+  "#ef4444",
+  "#eab308",
+  "#06b6d4",
+  "#ec4899",
+];
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
+  const [summary, setSummary] = useState<SummaryKPIs | null>(null);
+  const [categories, setCategories] = useState<CategoryBreakdownItem[]>([]);
+  const [trend, setTrend] = useState<MonthlyTrendItem[]>([]);
+  const [merchants, setMerchants] = useState<TopMerchantItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const [summaryData, categoryData, trendData, merchantData] =
+          await Promise.all([
+            getSummary(),
+            getCategoryBreakdown(),
+            getMonthlyTrend(),
+            getTopMerchants(),
+          ]);
+        setSummary(summaryData);
+        setCategories(categoryData);
+        setTrend(trendData);
+        setMerchants(merchantData);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-gray-500">Loading dashboard...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
@@ -16,7 +89,84 @@ export default function Dashboard() {
           Log Out
         </button>
       </div>
-      <p className="text-gray-600">Dashboard content coming next.</p>
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <KpiCard label="Income" value={`₹${summary?.total_income.toLocaleString()}`} />
+        <KpiCard label="Expenses" value={`₹${summary?.total_expenses.toLocaleString()}`} />
+        <KpiCard label="Savings" value={`₹${summary?.net_savings.toLocaleString()}`} />
+        <KpiCard label="Savings Rate" value={`${summary?.savings_rate}%`} />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        {/* Monthly Trend */}
+        <div className="bg-white rounded-lg shadow p-4">
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">
+            Monthly Spending Trend
+          </h2>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={trend}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="month" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Line type="monotone" dataKey="income" stroke="#10b981" name="Income" />
+              <Line type="monotone" dataKey="expenses" stroke="#ef4444" name="Expenses" />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Category Breakdown */}
+        <div className="bg-white rounded-lg shadow p-4">
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">
+            Spending by Category
+          </h2>
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie
+                data={categories}
+                dataKey="total_amount"
+                nameKey="category"
+                cx="50%"
+                cy="50%"
+                outerRadius={100}
+                label={(entry) => entry.category}
+              >
+                {categories.map((_, index) => (
+                  <Cell key={index} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Top Merchants */}
+      <div className="bg-white rounded-lg shadow p-4">
+        <h2 className="text-lg font-semibold text-gray-800 mb-4">
+          Top Merchants
+        </h2>
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={merchants}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="merchant" />
+            <YAxis />
+            <Tooltip />
+            <Bar dataKey="total_amount" fill="#3b82f6" name="Total Spent" />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
+function KpiCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="bg-white rounded-lg shadow p-4">
+      <p className="text-sm text-gray-500">{label}</p>
+      <p className="text-2xl font-bold text-gray-800">{value}</p>
     </div>
   );
 }
