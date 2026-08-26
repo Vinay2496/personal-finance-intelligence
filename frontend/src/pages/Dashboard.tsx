@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import {
   getSummary,
@@ -82,12 +83,17 @@ export default function Dashboard() {
         <h1 className="text-2xl font-bold text-gray-800">
           Welcome, {user?.name}
         </h1>
-        <button
-          onClick={logout}
-          className="text-sm text-red-600 hover:underline"
-        >
-          Log Out
-        </button>
+                <div className="flex items-center gap-4">
+          <Link to="/insights" className="text-sm text-blue-600 hover:underline">
+            View Insights
+          </Link>
+          <button
+            onClick={logout}
+            className="text-sm text-red-600 hover:underline"
+          >
+            Log Out
+          </button>
+        </div>
       </div>
 
       {/* KPI Cards */}
