@@ -3,8 +3,8 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Insights from "./pages/Insights";
+import AiAnalyst from "./pages/AiAnalyst";
 import ProtectedRoute from "./context/ProtectedRoute";
-
 function App() {
   return (
     <Routes>
@@ -26,9 +26,16 @@ function App() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/ai-analyst"
+        element={
+          <ProtectedRoute>
+            <AiAnalyst />
+          </ProtectedRoute>
+        }
+      />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );
 }
-
 export default App;

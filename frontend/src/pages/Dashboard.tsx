@@ -92,6 +92,9 @@ export default function Dashboard() {
           <Link to="/insights" className="text-sm text-blue-600 hover:underline">
             View Insights
           </Link>
+	  <Link to="/ai-analyst" className="text-sm text-blue-600 hover:underline">
+            Ask AI Analyst
+          </Link>
           <button
             onClick={logout}
             className="text-sm text-red-600 hover:underline"
