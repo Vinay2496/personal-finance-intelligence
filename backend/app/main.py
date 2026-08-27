@@ -8,14 +8,23 @@ from app.routers import ai_analyst
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+import os
+
+ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+]
+
+frontend_url = os.getenv("FRONTEND_URL")
+if frontend_url:
+    ALLOWED_ORIGINS.append(frontend_url)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 app.include_router(auth.router)
 app.include_router(transactions.router)
 app.include_router(analytics.router)
