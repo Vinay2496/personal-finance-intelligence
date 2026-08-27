@@ -173,7 +173,7 @@ export default function Dashboard() {
                 cx="50%"
                 cy="50%"
                 outerRadius={100}
-                label={(entry) => entry.category}
+                               label={(entry: any) => entry.category}
               >
                 {categories.map((_, index) => (
                   <Cell key={index} fill={COLORS[index % COLORS.length]} />
