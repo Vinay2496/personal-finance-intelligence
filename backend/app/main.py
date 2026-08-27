@@ -2,8 +2,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from app.database import engine, Base
-from app.models import user, transaction
-from app.routers import auth, transactions, analytics, insights, forecast
+from app.models import user, transaction, goal
+from app.routers import auth, transactions, analytics, insights, forecast, goals
 from app.routers import ai_analyst
 Base.metadata.create_all(bind=engine)
 
@@ -22,6 +22,7 @@ app.include_router(analytics.router)
 app.include_router(insights.router)
 app.include_router(forecast.router)
 app.include_router(ai_analyst.router)
+app.include_router(goals.router)
 
 @app.get("/")
 def read_root():
