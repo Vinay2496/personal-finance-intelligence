@@ -98,6 +98,9 @@ export default function Dashboard() {
           <Link to="/goals" className="text-sm text-blue-600 hover:underline">
             Goals
           </Link>
+          <Link to="/upload" className="text-sm text-blue-600 hover:underline">
+            Upload
+          </Link>
           <button
             onClick={logout}
             className="text-sm text-red-600 hover:underline"

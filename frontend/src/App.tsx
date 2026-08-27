@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from "react-router-dom";
+import Upload from "./pages/Upload";
 import Goals from "./pages/Goals";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -40,6 +41,14 @@ function App() {
         element={
           <ProtectedRoute>
             <Goals />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/upload"
+        element={
+          <ProtectedRoute>
+            <Upload />
           </ProtectedRoute>
         }
       />
